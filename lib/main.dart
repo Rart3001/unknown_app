@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
@@ -37,6 +38,8 @@ class CameraScanScreen extends StatefulWidget {
 }
 
 class CameraScanScreenState extends State<CameraScanScreen> {
+  Rectangle<int> textBoxPosition;
+  List<Point<int>> cornerPoints;
   Future<Profile> profileRequest;
   CameraController _controller;
   Future<void> _initializeControllerFuture;
@@ -75,6 +78,7 @@ class CameraScanScreenState extends State<CameraScanScreen> {
             return Stack(
               children: <Widget>[
                 CameraPreview(_controller),
+                createTextBox(),
                 createFutureBuilder(),
               ],
             );
@@ -144,16 +148,21 @@ class CameraScanScreenState extends State<CameraScanScreen> {
     final VisionText visionText =
         await textRecognizer.processImage(visionImage);
 
-    for (TextBlock block in visionText.blocks) {
+    for (final TextBlock block in visionText.blocks) {
+
+      setState(() {
+        textBoxPosition = block.boundingBox;
+        cornerPoints = block.cornerPoints;
+      });
+
       for (TextLine line in block.lines) {
         if (_regEx.hasMatch(line.text)) {
           if (profileRequest == null) {
             print("Fetch request ....");
             setState(() {
               profileRequest = _api.getProfile(line.text);
-             // _controller.stopImageStream();
+              // _controller.stopImageStream();
             });
-
           }
         }
       }
@@ -181,5 +190,21 @@ class CameraScanScreenState extends State<CameraScanScreen> {
         return new Container(width: 0.0, height: 0.0);
       },
     );
+  }
+
+  Container createTextBox() {
+    if (textBoxPosition != null) {
+      print("textBoxPosition = $textBoxPosition");
+      print("cornerPoints = $cornerPoints");
+
+      return new Container(
+        width: textBoxPosition.width.toDouble(),
+        height: textBoxPosition.height.toDouble(),
+        alignment: Alignment(textBoxPosition.left.toDouble(), textBoxPosition.top.toDouble()),
+        decoration:
+            new BoxDecoration(border: new Border.all(color: Colors.red)),
+      );
+    }
+    return new Container(width: 0.0, height: 0.0);
   }
 }
