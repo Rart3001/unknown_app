@@ -12,7 +12,12 @@ class Api {
     final response = await http.get('$API_URL?name=$name');
     if (response.statusCode == 200) {
       print("response = ${response.body}");
-      return profileFromJson(json.decode(response.body));
+      print("response = ${json.decode(response.body)}");
+
+      Map userMap = jsonDecode(response.body);
+      return new Profile.fromJson(userMap);
+
+     // return profileFromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load profile');
     }

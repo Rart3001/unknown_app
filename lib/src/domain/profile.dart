@@ -19,19 +19,20 @@ class Profile {
     this.img,
   });
 
-  factory Profile.fromJson(Map<String, dynamic> json) => new Profile(
-    name: json["name"],
-    profile: json["profile"],
-    company: json["company"],
-    mail: json["mail"],
-    img: json["img"],
-  );
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "profile": profile,
-    "company": company,
-    "mail": mail,
-    "img": img,
-  };
+  Profile.fromJson(Map<String, dynamic> json)
+      : name = json['name'],
+        profile = json['profile'],
+        company = json['company'],
+        mail = json['mail'],
+        img = json['img'];
+
+  Map<String, dynamic> toJson() =>
+      {
+        'name': name,
+        'profile': profile,
+        'company': company,
+        'mail': mail,
+        'img': img,
+      };
 }
