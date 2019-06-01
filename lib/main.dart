@@ -149,7 +149,11 @@ class CameraScanScreenState extends State<CameraScanScreen> {
         if (_regEx.hasMatch(line.text)) {
           if (profileRequest == null) {
             print("Fetch request ....");
-            profileRequest = _api.getProfile(line.text);
+            setState(() {
+              profileRequest = _api.getProfile(line.text);
+             // _controller.stopImageStream();
+            });
+
           }
         }
       }
@@ -162,10 +166,12 @@ class CameraScanScreenState extends State<CameraScanScreen> {
       builder: (context, snapshot) {
         print("profileRequest = $profileRequest");
         print("snapshot = $snapshot");
+        print("snapshot = ${snapshot.hasData}");
+        //print("snapshot = ${snapshot.data.name}");
 
         if (snapshot.hasData) {
           profileRequest = null;
-          _controller.stopImageStream();
+          //_controller.stopImageStream();
           return Text(snapshot.data.name);
         } else if (snapshot.hasError) {
           profileRequest = null;
