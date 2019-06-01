@@ -160,28 +160,19 @@ class CameraScanScreenState extends State<CameraScanScreen> {
     return FutureBuilder<Profile>(
       future: profileRequest,
       builder: (context, snapshot) {
-
         print("profileRequest = $profileRequest");
         print("snapshot = $snapshot");
 
-        if (profileRequest == null) {
-          return new Container(width: 0.0, height: 0.0);
-        } else {
-
-          if (snapshot.hasData) {
-            profileRequest = null;
-            return Text(snapshot.data.name);
-          } else if (snapshot.hasError) {
-            profileRequest = null;
-            return Text("${snapshot.error}");
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: CircularProgressIndicator(),
-          );
-
+        if (snapshot.hasData) {
+          profileRequest = null;
+          _controller.stopImageStream();
+          return Text(snapshot.data.name);
+        } else if (snapshot.hasError) {
+          profileRequest = null;
+          return Text("${snapshot.error}");
         }
+
+        return new Container(width: 0.0, height: 0.0);
       },
     );
   }
