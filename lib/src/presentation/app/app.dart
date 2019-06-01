@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:unknown_app/src/presentation/home/home_page.dart';
 
 class App extends StatelessWidget {
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {

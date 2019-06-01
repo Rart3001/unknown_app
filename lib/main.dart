@@ -1,52 +1,61 @@
-import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'image_detail.dart';
+import 'dart:async';
 
-List<CameraDescription> cameras;
+import 'package:camera/camera.dart';
+import 'package:firebase_ml_vision/firebase_ml_vision.dart';
+import 'package:flutter/material.dart';
+import 'package:unknown_app/src/data/api/api.dart';
+import 'package:unknown_app/src/domain/profile.dart';
 
 Future<void> main() async {
-  cameras = await availableCameras();
-  runApp(MyApp());
-}
+  // Obtain a list of the available cameras on the device.
+  final cameras = await availableCameras();
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+  // Get a specific camera from the list of available cameras
+  final firstCamera = cameras.first;
+
+  runApp(
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: CameraScanScreen(
+        camera: firstCamera,
       ),
-      home: MyHomePage(title: 'Mail Extractor'),
-    );
-  }
+    ),
+  );
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+// A screen that allows users to take a picture using a given camera
+class CameraScanScreen extends StatefulWidget {
+  final CameraDescription camera;
 
-  final String title;
+  const CameraScanScreen({
+    Key key,
+    @required this.camera,
+  }) : super(key: key);
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  CameraScanScreenState createState() => CameraScanScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class CameraScanScreenState extends State<CameraScanScreen> {
+  Future<Profile> profileRequest;
   CameraController _controller;
+  Future<void> _initializeControllerFuture;
+  final String _namePattern = r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$";
+  RegExp _regEx;
+  Api _api;
 
   @override
   void initState() {
     super.initState();
+    _regEx = RegExp(_namePattern);
+    _api = Api();
+    _controller = CameraController(
+      widget.camera,
+      ResolutionPreset.medium,
+    );
 
-    _controller = CameraController(cameras[0], ResolutionPreset.medium);
-    _controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    });
+    // Next, you need to initialize the controller. This returns a Future
+    _initializeControllerFuture = _controller.initialize();
   }
 
   @override
@@ -55,76 +64,118 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  void _takePicturePressed() {
-    _takePicture().then((String filePath) {
-      if (mounted) {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => ImageDetail(filePath)));
-      }
-    });
-  }
-
-  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
-
-  Future<String> _takePicture() async {
-    if (!_controller.value.isInitialized) {
-      print("Controller is not initialized");
-      return null;
-    }
-
-    final Directory extDir = await getApplicationDocumentsDirectory();
-    final String photoDir = '${extDir.path}/Photos/image_test';
-    await Directory(photoDir).create(recursive: true);
-    final String filePath = '$photoDir/${timestamp()}.jpg';
-
-    if (_controller.value.isTakingPicture) {
-      print("Currently already taking a picture");
-      return null;
-    }
-
-    try {
-      await _controller.takePicture(filePath);
-    } on CameraException catch (e) {
-      print("camera exception occured: $e");
-      return null;
-    }
-
-    return filePath;
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_controller.value.isInitialized) {
-      return Center(child: Text("Controller is not yet initialized!"));
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
+      appBar: AppBar(title: Text('Take a picture')),
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Stack(
+              children: <Widget>[
+                CameraPreview(_controller),
+                createFutureBuilder(),
+              ],
+            );
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        },
       ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: CameraPreview(_controller),
+      floatingActionButton: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 5.0),
+            child: FloatingActionButton(
+              child: Icon(Icons.camera_alt),
+              onPressed: () async {
+                try {
+                  // Ensure the camera is initialized
+                  await _initializeControllerFuture;
+                  _controller.startImageStream((CameraImage availableImage) {
+                    _scanText(availableImage);
+                  });
+                } catch (e) {
+                  print(e);
+                }
+              },
             ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Center(
-                child: RaisedButton.icon(
-                  icon: Icon(Icons.camera),
-                  label: Text("Take Picture"),
-                  onPressed: _takePicturePressed,
-                ),
-              ),
-            )
-          ],
-        ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 5.0),
+            child: FloatingActionButton(
+              child: Icon(Icons.stop),
+              onPressed: () async {
+                try {
+                  // Ensure the camera is initialized
+                  await _initializeControllerFuture;
+                  _controller.stopImageStream();
+                } catch (e) {
+                  print(e);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  void _scanText(CameraImage availableImage) async {
+    final FirebaseVisionImageMetadata metadata = FirebaseVisionImageMetadata(
+        rawFormat: availableImage.format.raw,
+        size: Size(
+            availableImage.width.toDouble(), availableImage.height.toDouble()),
+        planeData: availableImage.planes
+            .map((currentPlane) => FirebaseVisionImagePlaneMetadata(
+                bytesPerRow: currentPlane.bytesPerRow,
+                height: currentPlane.height,
+                width: currentPlane.width))
+            .toList(),
+        rotation: ImageRotation.rotation90);
+
+    final FirebaseVisionImage visionImage =
+        FirebaseVisionImage.fromBytes(availableImage.planes[0].bytes, metadata);
+    final TextRecognizer textRecognizer =
+        FirebaseVision.instance.textRecognizer();
+    final VisionText visionText =
+        await textRecognizer.processImage(visionImage);
+
+    for (TextBlock block in visionText.blocks) {
+      for (TextLine line in block.lines) {
+        if (_regEx.hasMatch(line.text)) {
+          //print(line.text);
+          if (profileRequest == null) {
+            profileRequest = _api.getProfile(line.text);
+          }
+        }
+      }
+    }
+  }
+
+  FutureBuilder<Profile> createFutureBuilder(){
+    return FutureBuilder<Profile>(
+      future: profileRequest,
+      builder: (context, snapshot) {
+
+        print("snapshot = $snapshot");
+        if (snapshot.hasData) {
+          return Text(snapshot.data.name);
+        } else if (snapshot.hasError) {
+        } else if (snapshot.hasError) {
+          return Text("${snapshot.error}");
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      },
+    );
+  }
 }
-
-
