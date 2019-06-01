@@ -67,7 +67,7 @@ class CameraScanScreenState extends State<CameraScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Take a picture')),
+      appBar: AppBar(title: Text('Unknown App')),
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
@@ -151,9 +151,8 @@ class CameraScanScreenState extends State<CameraScanScreen> {
             print("Fetch request ....");
             setState(() {
               profileRequest = _api.getProfile(line.text);
-             // _controller.stopImageStream();
+              // _controller.stopImageStream();
             });
-
           }
         }
       }
@@ -172,10 +171,138 @@ class CameraScanScreenState extends State<CameraScanScreen> {
         if (snapshot.hasData) {
           profileRequest = null;
           //_controller.stopImageStream();
-          return Text(snapshot.data.name);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Opacity(
+                opacity: 0.9,
+                child: new Card(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 250.0,
+                      height: 250.0,
+                      child: new Column(
+                        children: <Widget>[
+                          new Container(
+                              width: 80.0,
+                              height: 80.0,
+                              decoration: new BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: new DecorationImage(
+                                      fit: BoxFit.fill,
+                                      image:
+                                          new NetworkImage(snapshot.data.img)))),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              snapshot.data.name,
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 24.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              snapshot.data.profile,
+                              style: TextStyle(color: Colors.red, fontSize: 20.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              snapshot.data.company,
+                              style:
+                                  TextStyle(color: Colors.green, fontSize: 20.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              snapshot.data.mail,
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 18.0),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  elevation: 5.0,
+                ),
+              ),
+            ],
+          );
+          ;
         } else if (snapshot.hasError) {
           profileRequest = null;
           return Text("${snapshot.error}");
+        } else if (false) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Opacity(
+                opacity: 0.9,
+                child: new Card(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      width: 250.0,
+                      height: 250.0,
+                      child: new Column(
+                        children: <Widget>[
+                          new Container(
+                              width: 80.0,
+                              height: 80.0,
+                              decoration: new BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: new DecorationImage(
+                                      fit: BoxFit.fill,
+                                      image: new NetworkImage(
+                                          "https://media.licdn.com/dms/image/C5603AQE3K06LRFN3JQ/profile-displayphoto-shrink_200_200/0?e=1564617600&v=beta&t=Yv3XKKHR8aiqLwYDAr6PEn3L-0wUs_m79kBmISA4GSU")))),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              "Nicolás Jara",
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 24.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              "Desarrollador Mobile",
+                              style: TextStyle(color: Colors.red, fontSize: 20.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              "Unknown ltda",
+                              style:
+                                  TextStyle(color: Colors.green, fontSize: 20.0),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              "nicolas_jara_rojas@hotmail.com",
+                              style:
+                                  TextStyle(color: Colors.black, fontSize: 18.0),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  elevation: 5.0,
+                ),
+              ),
+            ],
+          );
+          return Text("nulo");
         }
 
         return new Container(width: 0.0, height: 0.0);
