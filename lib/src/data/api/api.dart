@@ -17,7 +17,6 @@ class Api {
       Map userMap = jsonDecode(response.body);
       return new Profile.fromJson(userMap);
 
-     // return profileFromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load profile');
     }
