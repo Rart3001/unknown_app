@@ -6,7 +6,7 @@ This app reads a presentation card with ML Vision of Firebase and looking for in
 
 This demo work only with the following names:
 
-1. "Oscarl del Amo Rodríguez”.
-2. "Carlos Rivero”.
-3. "Nicolás Jara”.
-4. "Roberto Requena".
+1. Oscarl del Amo Rodríguez.
+2. Carlos Rivero.
+3. Nicolás Jara.
+4. Roberto Requena.
